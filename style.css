@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
+:root{font-family:'DM Sans',sans-serif;color:#f8fafc;background:#0b1020;font-synthesis:none}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 15% 10%,#1e3154 0,transparent 42%),radial-gradient(ellipse at 90% 90%,#31204d 0,transparent 38%),#0b1020;display:grid;place-items:center;padding:24px}
+button,input{font:inherit}
+.shell{width:min(100%,520px)}
+.card,.chat-card{background:rgba(17,24,39,.92);border:1px solid rgba(148,163,184,.17);box-shadow:0 28px 90px #0008;border-radius:25px;backdrop-filter:blur(16px)}
+.card{padding:36px}
+.brand{display:flex;align-items:center;gap:10px;font:800 19px Manrope,sans-serif;letter-spacing:-.7px}
+.brand-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,#8b5cf6,#3b82f6);color:white}
+.brand-light{color:#94a3b8;font-weight:500}
+.eyebrow{margin:34px 0 9px;color:#a78bfa;font-size:10px;font-weight:700;letter-spacing:2px}
+h1{font:800 36px Manrope,sans-serif;letter-spacing:-1.5px;margin:0}
+.subtext{color:#9ca3af;line-height:1.6;font-size:14px;margin:10px 0 28px}
+label{display:block;font-size:12px;color:#cbd5e1;font-weight:600;margin:17px 0 8px}
+input{width:100%;border:1px solid #334155;background:#0b1222;color:white;border-radius:12px;padding:14px 15px;outline:none;transition:.2s}
+input:focus{border-color:#8b5cf6;box-shadow:0 0 0 3px #8b5cf622}
+input::placeholder{color:#64748b}
+.tabs{display:flex;background:#0b1222;border-radius:12px;padding:4px;margin:25px 0 18px}
+.tab{width:50%;border:0;border-radius:9px;padding:10px;color:#94a3b8;background:transparent;cursor:pointer;font-size:13px;font-weight:600}
+.tab.active{background:#26334b;color:white}
+.primary{width:100%;margin-top:24px;border:0;border-radius:12px;padding:15px;background:linear-gradient(100deg,#7c3aed,#4f46e5);color:white;font-weight:700;cursor:pointer;box-shadow:0 8px 24px #4f46e544}
+.primary span{float:right;font-size:18px;line-height:16px}
+.primary:disabled,.send-btn:disabled{opacity:.55;cursor:wait}
+.notice{min-height:18px;color:#fca5a5;font-size:12px;margin:14px 0 0}
+.footnote{border-top:1px solid #263244;padding-top:18px;margin:15px 0 0;color:#64748b;font-size:11px;line-height:1.6}
+.hidden{display:none!important}
+.chat-card{height:min(760px,calc(100vh - 48px));min-height:520px;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.chat-header{padding:22px 24px;border-bottom:1px solid #263244;display:flex;justify-content:space-between;align-items:center}
+.brand.small{font-size:15px}.brand.small .brand-icon{width:25px;height:25px;border-radius:8px;font-size:14px}
+.room-title{font:700 18px Manrope,sans-serif;margin:12px 0 3px}
+.room-meta{font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:7px}
+.live-dot{width:7px;height:7px;background:#34d399;border-radius:50%;display:inline-block}
+#room-id-label{color:#64748b;margin-left:4px}
+.ghost{background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:9px;padding:9px 12px;font-size:12px;cursor:pointer}
+.messages{padding:22px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:13px}
+.empty-state{margin:auto;color:#64748b;font-size:13px}
+.message{max-width:82%;align-self:flex-start}
+.message.mine{align-self:flex-end}
+.message-meta{font-size:10px;color:#94a3b8;margin:0 7px 5px}
+.message.mine .message-meta{text-align:right}
+.bubble{background:#253248;border:1px solid #34445d;padding:10px 13px;border-radius:15px 15px 15px 4px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.5}
+.message.mine .bubble{background:linear-gradient(135deg,#6041a8,#4b50a8);border-color:#7161c4;border-radius:15px 15px 4px 15px}
+.composer{display:flex;gap:9px;padding:15px 18px;border-top:1px solid #263244;align-items:center}
+.composer input{flex:1;min-width:0;padding:13px}
+.emoji-btn,.send-btn{border:0;cursor:pointer;border-radius:11px;height:43px}
+.emoji-btn{width:43px;background:#263449;color:#fcd34d;font-size:22px}
+.send-btn{width:45px;background:#7c3aed;color:white;font-size:18px}
+.emoji-tray{position:absolute;bottom:77px;left:18px;background:#1e293b;border:1px solid #475569;padding:9px;border-radius:13px;display:grid;grid-template-columns:repeat(6,36px);gap:5px;box-shadow:0 12px 35px #0008}
+.emoji-tray button{background:transparent;border:0;border-radius:7px;font-size:20px;padding:5px;cursor:pointer}
+.emoji-tray button:hover{background:#334155}
+.chat-status{font-size:11px;color:#fca5a5;margin:0;padding:0 20px 8px;min-height:17px}
+@media(max-width:520px){body{padding:12px}.card{padding:25px 21px}.chat-card{height:calc(100dvh - 24px);min-height:480px}.chat-header{padding:17px}.messages{padding:16px}.composer{padding:12px}}

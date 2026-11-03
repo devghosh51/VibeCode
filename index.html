@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>VibeChat — Private Room Chat</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <main class="shell">
+    <section class="card" id="entry-card">
+      <div class="brand"><span class="brand-icon">✦</span><span>Vibe<span class="brand-light">Chat</span></span></div>
+      <p class="eyebrow">YOUR PEOPLE. YOUR VIBE.</p>
+      <h1>Find your vibe. Chat privately.</h1>
+      <p class="subtext">Create a room for your people, or join one with its room ID and password.</p>
+
+      <label for="username">Your display name</label>
+      <input id="username" maxlength="30" placeholder="e.g. Alex" autocomplete="nickname">
+
+      <div class="tabs">
+        <button class="tab active" id="create-tab" type="button">Create room</button>
+        <button class="tab" id="join-tab" type="button">Join room</button>
+      </div>
+
+      <form id="create-form">
+        <label for="new-room">Room name / ID</label>
+        <input id="new-room" maxlength="40" placeholder="e.g. weekend-chat" required>
+        <label for="new-password">Room password</label>
+        <input id="new-password" type="password" minlength="6" maxlength="72" placeholder="At least 6 characters" required>
+        <button class="primary" type="submit">Create private room <span>→</span></button>
+      </form>
+
+      <form id="join-form" class="hidden">
+        <label for="room-id">Room ID</label>
+        <input id="room-id" maxlength="40" placeholder="Enter the room ID" required>
+        <label for="room-password">Room password</label>
+        <input id="room-password" type="password" maxlength="72" placeholder="Enter room password" required>
+        <button class="primary" type="submit">Join room <span>→</span></button>
+      </form>
+      <p class="notice" id="entry-status" role="status"></p>
+      <p class="footnote">Messages are stored in your Supabase project. Share the room ID and password only with people you trust.</p>
+    </section>
+
+    <section class="chat-card hidden" id="chat-card">
+      <header class="chat-header">
+        <div>
+          <div class="brand small"><span class="brand-icon">✦</span><span>Vibe<span class="brand-light">Chat</span></span></div>
+          <div class="room-title" id="room-title">Room</div>
+          <div class="room-meta"><span class="live-dot"></span> Live room <span id="room-id-label"></span></div>
+        </div>
+        <button class="ghost" id="leave-btn" type="button">Leave room</button>
+      </header>
+      <div class="messages" id="messages" aria-live="polite">
+        <div class="empty-state">No messages yet. Say hello 👋</div>
+      </div>
+      <form class="composer" id="message-form">
+        <button class="emoji-btn" id="emoji-btn" type="button" aria-label="Add emoji">☺</button>
+        <input id="message-input" maxlength="2000" placeholder="Write a message…" autocomplete="off">
+        <button class="send-btn" type="submit" aria-label="Send message">➤</button>
+      </form>
+      <div class="emoji-tray hidden" id="emoji-tray">
+        <button type="button">😀</button><button type="button">😂</button><button type="button">🥰</button>
+        <button type="button">😍</button><button type="button">👍</button><button type="button">❤️</button>
+        <button type="button">🎉</button><button type="button">🔥</button><button type="button">🙏</button>
+        <button type="button">👋</button><button type="button">😎</button><button type="button">🤔</button>
+      </div>
+      <p class="chat-status" id="chat-status" role="status"></p>
+    </section>
+  </main>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
