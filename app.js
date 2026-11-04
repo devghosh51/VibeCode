@@ -81,14 +81,24 @@
   }
 
   async function loadMessages() {
-    const { data, error } = await client.from("chat_messages").select("id, room_id, username, content, created_at")
-      .eq("room_id", currentRoom).order("created_at", { ascending: true }).limit(100);
+    const { data, error } = await client
+      .from("chat_messages")
+      .select("id, room_id, username, content, created_at")
+      .eq("room_id", currentRoom)
+      .order("created_at", { ascending: true });
+
     if (error) throw error;
+
     $("messages").innerHTML = "";
-    if (!data.length) showEmpty();
-    else data.forEach(renderMessage);
+
+    if (!data.length) {
+      showEmpty();
+    } else {
+      data.forEach(renderMessage);
+    }
+
     scrollBottom();
-  }
+}
 
   function showEmpty() {
     $("messages").innerHTML = '<div class="empty-state">No messages yet. Say hello 👋</div>';
