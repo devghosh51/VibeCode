@@ -85,7 +85,8 @@
       .from("chat_messages")
       .select("id, room_id, username, content, created_at")
       .eq("room_id", currentRoom)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: false })
+      .limit(100);
 
     if (error) throw error;
 
@@ -94,7 +95,7 @@
     if (!data.length) {
       showEmpty();
     } else {
-      data.forEach(renderMessage);
+      data.reverse().forEach(renderMessage);
     }
 
     scrollBottom();
