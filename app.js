@@ -5,7 +5,7 @@
     window.SUPABASE_URL && !window.SUPABASE_URL.includes("YOUR-PROJECT") &&
     window.SUPABASE_ANON_KEY && !window.SUPABASE_ANON_KEY.includes("YOUR_");
 
-  let client, currentRoom = null, currentUsername = "", channel = null;
+  let client, currentRoom = null, currentUsername = "", channel = null, presenceChannel = null, currentUserId = null, presenceKey = null;
 
   const entryCard = $("entry-card"), chatCard = $("chat-card");
   const createForm = $("create-form"), joinForm = $("join-form");
@@ -23,6 +23,9 @@
       const { error: signInError } = await client.auth.signInAnonymously();
       if (signInError) throw signInError;
     }
+    const { data: { user }, error: userError } = await client.auth.getUser();
+    if (userError) throw userError;
+    currentUserId = user.id;
   }
 
   $("create-tab").addEventListener("click", () => {
@@ -73,6 +76,7 @@
     entryCard.classList.add("hidden"); chatCard.classList.remove("hidden");
     await loadMessages();
     subscribeToMessages();
+    subscribeToPresence();
     $("message-input").focus();
   }
 
@@ -112,6 +116,52 @@
       .subscribe((state) => { if (state === "CHANNEL_ERROR") status($("chat-status"), "Live connection issue. Refresh the page to reconnect."); });
   }
 
+  function addSystemNotice(text) {
+    const box = $("messages");
+    const empty = box.querySelector(".empty-state"); if (empty) empty.remove();
+    const notice = document.createElement("div");
+    notice.className = "system-notice";
+    notice.textContent = text;
+    box.append(notice);
+    scrollBottom();
+  }
+
+  function subscribeToPresence() {
+    if (presenceChannel) client.removeChannel(presenceChannel);
+    presenceKey = `${currentUserId}:${window.crypto?.randomUUID ? crypto.randomUUID() : Date.now() + Math.random()}`;
+    presenceChannel = client.channel("room-presence-" + currentRoom, {
+      config: { presence: { key: presenceKey } }
+    });
+
+    presenceChannel
+      .on("presence", { event: "join" }, ({ newPresences }) => {
+        (newPresences || []).forEach((person) => {
+          if (person.session_key === presenceKey) return;
+          addSystemNotice(`${person.username || "Someone"} joined the room`);
+        });
+      })
+      .on("presence", { event: "leave" }, ({ leftPresences }) => {
+        (leftPresences || []).forEach((person) => {
+          if (person.session_key === presenceKey) return;
+          addSystemNotice(`${person.username || "Someone"} left the room`);
+        });
+      })
+      .subscribe(async (state) => {
+        if (state === "SUBSCRIBED") {
+          const { error } = await presenceChannel.track({
+            user_id: currentUserId,
+            username: currentUsername,
+            session_key: presenceKey,
+            online_at: new Date().toISOString()
+          });
+          if (error) status($("chat-status"), "Could not publish your online status.");
+          else addSystemNotice("You joined the room");
+        } else if (state === "CHANNEL_ERROR" || state === "TIMED_OUT") {
+          status($("chat-status"), "Live presence connection issue. Refresh the page to reconnect.");
+        }
+      });
+  }
+
   $("message-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const input = $("message-input"), content = input.value.trim();
@@ -134,8 +184,10 @@
     $("emoji-tray").classList.add("hidden");
   });
   $("leave-btn").addEventListener("click", async () => {
+    if (presenceChannel) await client.removeChannel(presenceChannel);
     if (channel) await client.removeChannel(channel);
-    channel = null; currentRoom = null; chatCard.classList.add("hidden"); entryCard.classList.remove("hidden");
+    presenceChannel = null; channel = null; currentRoom = null; currentUserId = null; presenceKey = null;
+    chatCard.classList.add("hidden"); entryCard.classList.remove("hidden");
     $("messages").innerHTML = '<div class="empty-state">No messages yet. Say hello 👋</div>';
     $("message-input").value = ""; status($("chat-status"), "");
   });
