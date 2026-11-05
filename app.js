@@ -17,10 +17,7 @@
   const GROUP_MS = 5 * 60 * 1000;
   let lastDayKey = null, lastSender = null, lastTime = 0, lastBubble = null;
 
-  // reply tracking
-  let replyingTo = null;
-
-  // typing indicator state
+  // typing indicator
   const typers = new Map();
   let lastTypingSent = 0, typingIdleTimer = null;
 
@@ -48,51 +45,25 @@
       .msg-dot.on { display: inline-block; }
 
       .header-actions { display: flex; gap: 6px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
-      .icon-btn { padding: 9px 11px; line-height: 1; font-size: 14px; cursor: pointer; }
+      .icon-btn { padding: 9px 11px; line-height: 1; font-size: 14px; }
 
       .date-sep { align-self: center; width: 100%; display: flex; align-items: center; gap: 10px; color: #94a3b8; font-size: 11px; font-weight: 600; margin: 4px 0; }
       .date-sep::before, .date-sep::after { content: ""; flex: 1; height: 1px; background: rgba(148,163,184,.25); }
 
-      .message { position: relative; }
       .message.grouped { margin-top: -9px; }
       .message .bubble.no-tail { border-radius: 15px !important; }
-      .bubble { cursor: pointer; user-select: text; word-break: break-word; }
 
-      /* Reply preview bar */
-      #reply-bar { display: none; background: rgba(148,163,184,0.12); border-left: 3px solid #3b82f6; padding: 6px 12px; margin: 0 20px 6px; border-radius: 4px; font-size: 12px; align-items: center; justify-content: space-between; }
-      #reply-bar.active { display: flex; }
-      #reply-bar span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%; }
-      #reply-close { cursor: pointer; border: none; background: transparent; font-size: 14px; color: #94a3b8; }
-
-      /* Quotes & Embeds */
-      .bubble-quote { background: rgba(0,0,0,0.15); border-left: 2px solid currentColor; padding: 4px 8px; border-radius: 4px; margin-bottom: 6px; font-size: 12px; opacity: 0.85; }
-      .bubble-img { max-width: 100%; max-height: 250px; border-radius: 8px; margin-top: 6px; display: block; }
-      .bubble a { color: inherit; text-decoration: underline; word-break: break-all; }
-
-      /* Reactions */
-      .reaction-bar { position: absolute; right: 8px; top: -14px; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; padding: 2px 6px; display: none; gap: 4px; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-      .message:hover .reaction-bar { display: flex; }
-      .reaction-bar button { background: none; border: none; font-size: 14px; cursor: pointer; padding: 2px; transition: transform 0.1s; }
-      .reaction-bar button:hover { transform: scale(1.3); }
-      .reaction-pills { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
-      .reaction-pill { background: rgba(255,255,255,0.1); font-size: 11px; padding: 1px 6px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); }
-
-      /* Scroll To Bottom Button */
-      #scroll-btn { position: absolute; right: 24px; bottom: 80px; background: #1f2937; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; display: none; align-items: center; gap: 6px; z-index: 20; box-shadow: 0 4px 14px rgba(0,0,0,0.35); }
-      #scroll-btn.show { display: flex; }
-
-      /* Typing indicator */
-      #typing-indicator { flex: none; min-height: 22px; padding: 2px 22px 6px; font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 7px; }
-      .typing-dots { display: inline-flex; gap: 3px; align-items: center; }
-      .typing-dots i { width: 5px; height: 5px; border-radius: 50%; background: #38bdf8; opacity: .35; animation: vcBlink 1.2s infinite ease-in-out; }
+      #typing-indicator { flex: none; min-height: 22px; padding: 0 22px 4px; font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 7px; }
+      .typing-dots { display: inline-flex; gap: 3px; }
+      .typing-dots i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .35; animation: vcBlink 1.2s infinite; }
       .typing-dots i:nth-child(2) { animation-delay: .2s; }
       .typing-dots i:nth-child(3) { animation-delay: .4s; }
-      @keyframes vcBlink { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-2px); } }
+      @keyframes vcBlink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
 
       #vc-toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: #111827; color: #fff; padding: 10px 16px; border-radius: 999px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 9999; max-width: 90vw; text-align: center; border: 1px solid rgba(255,255,255,.18); }
       #vc-toast.show { opacity: 1; }
 
-      /* Light theme */
+      /* ---------- Light theme ---------- */
       html[data-theme="light"] { color: #0f172a; }
       html[data-theme="light"] body { color: #0f172a; background: radial-gradient(ellipse at 15% 10%, #dbeafe 0, transparent 42%), radial-gradient(ellipse at 90% 90%, #ede9fe 0, transparent 38%), #f1f5f9; }
       html[data-theme="light"] .card, html[data-theme="light"] .chat-card { background: rgba(255,255,255,.96); border-color: #e2e8f0; box-shadow: 0 20px 60px rgba(15,23,42,.15); }
@@ -115,8 +86,6 @@
       html[data-theme="light"] .emoji-btn { background: #e2e8f0; }
       html[data-theme="light"] .emoji-tray { background: #fff; border-color: #cbd5e1; box-shadow: 0 12px 35px rgba(15,23,42,.18); }
       html[data-theme="light"] .emoji-tray button:hover { background: #e2e8f0; }
-      html[data-theme="light"] .reaction-bar { background: #ffffff; border-color: #e2e8f0; }
-      html[data-theme="light"] #scroll-btn { background: #ffffff; color: #0f172a; border-color: #cbd5e1; }
     `;
     document.head.appendChild(st);
   })();
@@ -229,6 +198,7 @@
       const n = new Notification(title, { body, tag, silent: true });
       n.onclick = () => { window.focus(); n.close(); };
     } catch {
+      // Android Chrome needs a service worker (sw.js) to show notifications
       if (navigator.serviceWorker) {
         navigator.serviceWorker.getRegistration().then((reg) => {
           if (reg) reg.showNotification(title, { body, tag, renotify: true, silent: notifyMode !== "sound" });
@@ -248,85 +218,26 @@
     }
   }
 
-  // ================= Share / Invite Button =================
-  function makeShareBtn() {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "ghost icon-btn";
-    b.textContent = "🔗";
-    b.title = "Copy Room Invite Link";
-    b.addEventListener("click", () => {
-      const room = $("room-title").textContent;
-      const url = new URL(window.location.href);
-      url.searchParams.set("room", room);
-      navigator.clipboard.writeText(url.toString()).then(() => {
-        toast("Invite link copied to clipboard!");
-      }).catch(() => toast("Failed to copy link"));
-    });
-    return b;
-  }
-
-  // ================= Scroll To Bottom Button =================
-  const scrollBtn = document.createElement("button");
-  scrollBtn.id = "scroll-btn";
-  scrollBtn.innerHTML = `<span>↓ New messages</span>`;
-  chatCard.appendChild(scrollBtn);
-  scrollBtn.addEventListener("click", () => {
-    scrollBottom(true);
-    scrollBtn.classList.remove("show");
-  });
-
-  const msgContainer = $("messages");
-  msgContainer.addEventListener("scroll", () => {
-    const dist = msgContainer.scrollHeight - msgContainer.scrollTop - msgContainer.clientHeight;
-    if (dist < 100) scrollBtn.classList.remove("show");
-  });
-
-  // ================= Reply UI =================
-  const replyBar = document.createElement("div");
-  replyBar.id = "reply-bar";
-  replyBar.innerHTML = `<span id="reply-text"></span><button type="button" id="reply-close">✕</button>`;
-  $("message-form").parentNode.insertBefore(replyBar, $("message-form"));
-  replyBar.querySelector("#reply-close").addEventListener("click", cancelReply);
-
-  function setReply(sender, snippet) {
-    replyingTo = { sender, snippet };
-    replyBar.querySelector("#reply-text").textContent = `Replying to ${sender}: "${snippet.slice(0, 30)}..."`;
-    replyBar.classList.add("active");
-    $("message-input").focus();
-  }
-  function cancelReply() {
-    replyingTo = null;
-    replyBar.classList.remove("active");
-  }
-
   // ================= Header / entry-card buttons =================
   (function mountButtons() {
     const leaveBtn = $("leave-btn");
     const actions = document.createElement("div");
     actions.className = "header-actions";
     leaveBtn.parentNode.insertBefore(actions, leaveBtn);
-    actions.append(makeShareBtn(), makeThemeBtn(), bellBtn, leaveBtn);
+    actions.append(makeThemeBtn(), bellBtn, leaveBtn);
 
     const entryBrand = entryCard.querySelector(".brand");
     if (entryBrand) { const tb = makeThemeBtn(); tb.style.marginLeft = "auto"; entryBrand.append(tb); }
 
     applyTheme(store.get("vc_theme", "dark"));
     updateBell();
-
-    const params = new URLSearchParams(window.location.search);
-    const roomParam = params.get("room");
-    if (roomParam) {
-      $("join-tab").click();
-      $("room-id").value = roomParam;
-    }
   })();
 
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
 
-  // ================= Typing Indicator Implementation =================
+  // ================= Typing indicator =================
   const typingEl = document.createElement("div");
   typingEl.id = "typing-indicator";
   typingEl.setAttribute("aria-live", "polite");
@@ -336,96 +247,51 @@
     typingEl.innerHTML = "";
     const names = [...typers.values()].map((t) => t.name);
     if (!names.length) return;
-
     const dots = document.createElement("span");
     dots.className = "typing-dots";
     dots.innerHTML = "<i></i><i></i><i></i>";
-
     const txt = document.createElement("span");
-    txt.textContent = names.length === 1 ? `${names[0]} is typing...`
-      : names.length === 2 ? `${names[0]} and ${names[1]} are typing...`
-      : `${names.length} people are typing...`;
-
+    txt.textContent = names.length === 1 ? `${names[0]} is typing`
+      : names.length === 2 ? `${names[0]} and ${names[1]} are typing`
+      : `${names.length} people are typing`;
     typingEl.append(dots, txt);
   }
-
   function removeTyperFor(userId, username) {
     let changed = false;
     for (const [k, t] of typers) {
-      if ((userId && k === userId) || (username && t.name === username)) {
-        clearTimeout(t.timer);
-        typers.delete(k);
-        changed = true;
-      }
+      if ((userId && k === userId) || (username && t.name === username)) { clearTimeout(t.timer); typers.delete(k); changed = true; }
     }
     if (changed) renderTyping();
   }
-
-  function clearTypers() {
-    typers.forEach((t) => clearTimeout(t.timer));
-    typers.clear();
-    renderTyping();
-  }
-
+  function clearTypers() { typers.forEach((t) => clearTimeout(t.timer)); typers.clear(); renderTyping(); }
   function handleTyping(p) {
-    if (!p || (p.user_id && p.user_id === currentUserId) || p.username === currentUsername) return;
+    if (!p || (p.user_id && p.user_id === currentUserId)) return;
     const key = p.user_id || p.username;
     if (!key) return;
-
     const old = typers.get(key);
     if (old) clearTimeout(old.timer);
-
-    if (p.typing === false) {
-      typers.delete(key);
-    } else {
-      typers.set(key, {
-        name: p.username || "Someone",
-        timer: setTimeout(() => {
-          typers.delete(key);
-          renderTyping();
-        }, 3500)
-      });
-    }
+    if (p.typing === false) typers.delete(key);
+    else typers.set(key, { name: p.username || "Someone", timer: setTimeout(() => { typers.delete(key); renderTyping(); }, 4000) });
     renderTyping();
   }
-
   function sendTyping(state) {
     if (!presenceChannel || !presenceReady) return;
     try {
-      presenceChannel.send({
-        type: "broadcast",
-        event: "typing",
-        payload: { user_id: currentUserId, username: currentUsername, typing: state }
-      });
+      presenceChannel.send({ type: "broadcast", event: "typing", payload: { user_id: currentUserId, username: currentUsername, typing: state } });
     } catch { /* ignore */ }
   }
-
   function stopTyping() {
     clearTimeout(typingIdleTimer);
-    if (lastTypingSent) {
-      lastTypingSent = 0;
-      sendTyping(false);
-    }
+    if (lastTypingSent) { lastTypingSent = 0; sendTyping(false); }
   }
-
-  // Input listener tracking typing state
   $("message-input").addEventListener("input", () => {
     if (!presenceReady) return;
-    const val = $("message-input").value.trim();
-    if (!val) {
-      stopTyping();
-      return;
-    }
+    if (!$("message-input").value.trim()) { stopTyping(); return; }
     const now = Date.now();
-    if (now - lastTypingSent > 2000) {
-      lastTypingSent = now;
-      sendTyping(true);
-    }
+    if (now - lastTypingSent > 2000) { lastTypingSent = now; sendTyping(true); }
     clearTimeout(typingIdleTimer);
     typingIdleTimer = setTimeout(stopTyping, 3000);
   });
-
-  $("message-input").addEventListener("blur", stopTyping);
 
   // ================= Auth / forms =================
   async function ensureSession() {
@@ -493,8 +359,9 @@
     $("message-input").focus();
   }
 
-  // ================= Messages & Rich Rendering =================
+  // ================= Messages =================
   async function loadMessages() {
+    // newest 100 messages, then flipped so they read oldest -> newest
     const { data, error } = await client.from("chat_messages").select("id, room_id, username, content, created_at")
       .eq("room_id", currentRoom).order("created_at", { ascending: false }).limit(100);
     if (error) throw error;
@@ -523,52 +390,6 @@
     return d.toLocaleDateString([], opts);
   }
 
-  function buildRichContent(rawText) {
-    const fragment = document.createDocumentFragment();
-    let text = rawText;
-
-    if (text.startsWith("> @")) {
-      const parts = text.split("
-
-");
-      const quote = parts[0].replace("> ", "");
-      text = parts.slice(1).join("
-
-");
-      const qEl = document.createElement("div");
-      qEl.className = "bubble-quote";
-      qEl.textContent = quote;
-      fragment.appendChild(qEl);
-    }
-
-    const contentDiv = document.createElement("div");
-    const words = text.split(/(\s+)/);
-
-    words.forEach(word => {
-      if (/^https?:\/\/[^\s]+$/.test(word)) {
-        if (/\.(jpeg|jpg|gif|png|webp)($|\?)/i.test(word)) {
-          const img = document.createElement("img");
-          img.src = word;
-          img.className = "bubble-img";
-          img.loading = "lazy";
-          contentDiv.appendChild(img);
-        } else {
-          const a = document.createElement("a");
-          a.href = word;
-          a.target = "_blank";
-          a.rel = "noopener noreferrer";
-          a.textContent = word;
-          contentDiv.appendChild(a);
-        }
-      } else {
-        contentDiv.appendChild(document.createTextNode(word));
-      }
-    });
-
-    fragment.appendChild(contentDiv);
-    return fragment;
-  }
-
   function renderMessage(msg) {
     const box = $("messages");
     const empty = box.querySelector(".empty-state"); if (empty) empty.remove();
@@ -577,6 +398,7 @@
     const date = new Date(msg.created_at);
     const timeText = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
+    // date separator (Today / Yesterday / date)
     const dayKey = date.toDateString();
     if (dayKey !== lastDayKey) {
       const sep = document.createElement("div");
@@ -586,6 +408,7 @@
       lastDayKey = dayKey; lastSender = null; lastTime = 0; lastBubble = null;
     }
 
+    // group consecutive messages from the same person
     const grouped = lastSender === msg.username && (date.getTime() - lastTime) < GROUP_MS;
 
     const wrap = document.createElement("div");
@@ -602,80 +425,17 @@
       meta.append(mdot, mtext);
       wrap.append(meta);
     } else if (lastBubble) {
-      lastBubble.classList.add("no-tail");
+      lastBubble.classList.add("no-tail"); // only the last bubble of a group keeps its tail
     }
 
-    const reactBar = document.createElement("div");
-    reactBar.className = "reaction-bar";
-    ["❤️", "😂", "👍", "🔥", "😮"].forEach(emoji => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.textContent = emoji;
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        sendReaction(msg.id, emoji);
-      });
-      reactBar.appendChild(btn);
-    });
-    wrap.append(reactBar);
-
-    const bubble = document.createElement("div"); 
-    bubble.className = "bubble";
-    bubble.title = `${timeText} - Double-click to quote reply`;
-    bubble.appendChild(buildRichContent(msg.content));
-    
-    bubble.addEventListener("dblclick", () => {
-      setReply(msg.username, msg.content);
-    });
-
-    const pills = document.createElement("div");
-    pills.className = "reaction-pills";
-    bubble.append(pills);
-
-    wrap.append(bubble); 
-    box.append(wrap);
+    const bubble = document.createElement("div"); bubble.className = "bubble";
+    bubble.textContent = msg.content;
+    bubble.title = timeText;
+    wrap.append(bubble); box.append(wrap);
 
     lastSender = msg.username; lastTime = date.getTime(); lastBubble = bubble;
-    
-    const dist = box.scrollHeight - box.scrollTop - box.clientHeight;
-    if (dist > 150) {
-      scrollBtn.classList.add("show");
-    } else {
-      scrollBottom();
-    }
+    scrollBottom();
     return true;
-  }
-
-  // ================= Realtime Reactions =================
-  function sendReaction(messageId, emoji) {
-    if (!presenceChannel || !presenceReady) return;
-    addReactionToDOM(messageId, emoji, currentUsername);
-    try {
-      presenceChannel.send({
-        type: "broadcast",
-        event: "reaction",
-        payload: { messageId, emoji, user: currentUsername }
-      });
-    } catch { /* ignore */ }
-  }
-
-  function addReactionToDOM(messageId, emoji, user) {
-    const msgEl = document.querySelector(`[data-message-id="${messageId}"]`);
-    if (!msgEl) return;
-    const container = msgEl.querySelector(".reaction-pills");
-    let pill = container.querySelector(`[data-emoji="${emoji}"]`);
-    if (!pill) {
-      pill = document.createElement("span");
-      pill.className = "reaction-pill";
-      pill.dataset.emoji = emoji;
-      pill.dataset.count = "1";
-      pill.textContent = `${emoji} 1`;
-      container.appendChild(pill);
-    } else {
-      const count = parseInt(pill.dataset.count, 10) + 1;
-      pill.dataset.count = count;
-      pill.textContent = `${emoji} ${count}`;
-    }
   }
 
   function subscribeToMessages() {
@@ -698,11 +458,11 @@
     notice.className = "system-notice";
     notice.textContent = text;
     box.append(notice);
-    lastSender = null;
+    lastSender = null; // a notice breaks message grouping
     scrollBottom();
   }
 
-  // ================= Presence =================
+  // ================= Presence (green dots) =================
   function refreshMessageDots() {
     document.querySelectorAll("#messages .message-meta").forEach((meta) => {
       const dot = meta.querySelector(".msg-dot");
@@ -731,11 +491,6 @@
     presenceChannel
       .on("presence", { event: "sync" }, syncActiveMembers)
       .on("broadcast", { event: "typing" }, ({ payload }) => handleTyping(payload))
-      .on("broadcast", { event: "reaction" }, ({ payload }) => {
-        if (payload && payload.messageId) {
-          addReactionToDOM(payload.messageId, payload.emoji, payload.user);
-        }
-      })
       .on("presence", { event: "join" }, ({ newPresences }) => {
         (newPresences || []).forEach((person) => {
           if (person.session_key === presenceKey) return;
@@ -766,42 +521,19 @@
       });
   }
 
-  // ================= Composer / Leave / Slash Commands =================
+  // ================= Composer / leave =================
   $("message-form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const input = $("message-input");
-    let content = input.value.trim();
+    const input = $("message-input"), content = input.value.trim();
     if (!content || !currentRoom) return;
-
-    if (content === "/clear") {
-      $("messages").innerHTML = "";
-      showEmpty();
-      input.value = "";
-      return;
-    }
-    if (content === "/shrug") content = "¯\\_(ツ)_/¯";
-    if (content === "/tableflip") content = "(╯°□°)╯︵ ┻━┻";
-    if (content === "/lenny") content = "( ͡° ͜ʖ ͡°)";
-
-    if (replyingTo) {
-      content = `> @${replyingTo.sender}: ${replyingTo.snippet}\n\n${content}`;
-      cancelReply();
-    }
-
     stopTyping();
-    const send = $("message-form").querySelector("button[type=submit]"); 
-    send.disabled = true;
-
+    const send = $("message-form").querySelector("button[type=submit]"); send.disabled = true;
     try {
       const { error } = await client.from("chat_messages").insert({ room_id: currentRoom, username: currentUsername, content });
       if (error) throw error;
       input.value = ""; status($("chat-status"), "");
-    } catch (err) { 
-      status($("chat-status"), err.message || "Message could not be sent."); 
-    } finally { 
-      send.disabled = false; 
-      input.focus(); 
-    }
+    } catch (err) { status($("chat-status"), err.message || "Message could not be sent."); }
+    finally { send.disabled = false; input.focus(); }
   });
 
   $("emoji-btn").addEventListener("click", () => $("emoji-tray").classList.toggle("hidden"));
@@ -812,10 +544,8 @@
     input.focus(); input.selectionStart = input.selectionEnd = start + e.target.textContent.length;
     $("emoji-tray").classList.add("hidden");
   });
-
   $("leave-btn").addEventListener("click", async () => {
     stopTyping();
-    cancelReply();
     presenceReady = false;
     if (presenceChannel) await client.removeChannel(presenceChannel);
     if (channel) await client.removeChannel(channel);
@@ -825,9 +555,5 @@
     showEmpty();
     $("message-input").value = ""; status($("chat-status"), "");
   });
-
-  function scrollBottom(smooth = false) { 
-    const box = $("messages"); 
-    box.scrollTo({ top: box.scrollHeight, behavior: smooth ? "smooth" : "auto" }); 
-  }
+  function scrollBottom() { const box = $("messages"); box.scrollTop = box.scrollHeight; }
 })();
