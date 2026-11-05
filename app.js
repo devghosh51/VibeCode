@@ -5,7 +5,7 @@
     window.SUPABASE_URL && !window.SUPABASE_URL.includes("YOUR-PROJECT") &&
     window.SUPABASE_ANON_KEY && !window.SUPABASE_ANON_KEY.includes("YOUR_");
 
-  let client, currentRoom = null, currentUsername = "", channel = null, presenceChannel = null, currentUserId = null, presenceKey = null;
+  let client, currentRoom = null, currentUsername = "", channel = null, presenceChannel = null, currentUserId = null, presenceKey = null, activeNames = new Set();
 
   const entryCard = $("entry-card"), chatCard = $("chat-card");
   const createForm = $("create-form"), joinForm = $("join-form");
@@ -73,6 +73,7 @@
     currentRoom = roomId;
     $("room-title").textContent = roomName;
     $("room-id-label").textContent = "· " + roomName;
+    injectActiveStyles(); activeNames = new Set();
     entryCard.classList.add("hidden"); chatCard.classList.remove("hidden");
     await loadMessages();
     subscribeToMessages();
@@ -82,8 +83,9 @@
 
   async function loadMessages() {
     const { data, error } = await client.from("chat_messages").select("id, room_id, username, content, created_at")
-      .eq("room_id", currentRoom).order("created_at", { ascending: true }).limit(100);
+      .eq("room_id", currentRoom).order("created_at", { ascending: false }).limit(100);
     if (error) throw error;
+    data.reverse(); // newest 100, shown oldest -> newest
     $("messages").innerHTML = "";
     if (!data.length) showEmpty();
     else data.forEach(renderMessage);
@@ -103,7 +105,12 @@
     wrap.dataset.messageId = msg.id;
     const meta = document.createElement("div"); meta.className = "message-meta";
     const date = new Date(msg.created_at);
-    meta.textContent = `${msg.username} · ${date.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})}`;
+    meta.dataset.user = msg.username;
+    const mdot = document.createElement("span"); mdot.className = "msg-dot";
+    const mtext = document.createElement("span");
+    mtext.textContent = `${msg.username} · ${date.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})}`;
+    meta.append(mdot, mtext);
+    if (activeNames.has(msg.username)) mdot.classList.add("on");
     const bubble = document.createElement("div"); bubble.className = "bubble"; bubble.textContent = msg.content;
     wrap.append(meta, bubble); box.append(wrap); scrollBottom();
   }
@@ -127,33 +134,28 @@
   }
 
   // ---- Active members panel (green dot beside each online member) ----
-  function ensureActivePanel() {
+  function refreshMessageDots() {
+    document.querySelectorAll("#messages .message-meta").forEach((meta) => {
+      const dot = meta.querySelector(".msg-dot");
+      if (dot) dot.classList.toggle("on", activeNames.has(meta.dataset.user));
+    });
+  }
+
+  function injectActiveStyles() {
     if (!document.getElementById("active-members-style")) {
       const st = document.createElement("style");
       st.id = "active-members-style";
       st.textContent = `
-        #active-members { padding: 10px 14px; border-bottom: 1px solid rgba(128,128,128,.25); font-size: 14px; }
-        #active-members .am-title { font-weight: 600; margin-bottom: 6px; opacity: .85; }
-        #active-members .am-list { display: flex; flex-wrap: wrap; gap: 6px 16px; }
-        #active-members .am-item { display: inline-flex; align-items: center; gap: 6px; }
-        #active-members .am-dot { width: 9px; height: 9px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.25); flex: none; }
-        #active-members .am-you { opacity: .6; font-size: 12px; }
+        .msg-dot { display: none; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,.25); margin-right: 6px; vertical-align: middle; }
+        .msg-dot.on { display: inline-block; }
       `;
       document.head.appendChild(st);
     }
-    let el = $("active-members");
-    if (!el) {
-      el = document.createElement("div");
-      el.id = "active-members";
-      const msgs = $("messages");
-      msgs.parentNode.insertBefore(el, msgs);
-    }
-    return el;
   }
 
   function renderActiveMembers() {
     if (!presenceChannel) return;
-    const el = ensureActivePanel();
+    injectActiveStyles();
     const state = presenceChannel.presenceState();
     const members = new Map(); // one entry per user, even with multiple tabs
     Object.values(state).forEach((metas) => {
@@ -165,29 +167,8 @@
     const entries = [...members.entries()].sort((a, b) =>
       (a[0] === currentUserId ? -1 : b[0] === currentUserId ? 1 : a[1].localeCompare(b[1])));
 
-    el.innerHTML = "";
-    const title = document.createElement("div");
-    title.className = "am-title";
-    title.textContent = `Active now · ${entries.length} member${entries.length === 1 ? "" : "s"}`;
-    const list = document.createElement("div");
-    list.className = "am-list";
-    entries.forEach(([id, name]) => {
-      const item = document.createElement("span");
-      item.className = "am-item";
-      const dot = document.createElement("span");
-      dot.className = "am-dot";
-      const label = document.createElement("span");
-      label.textContent = name;
-      item.append(dot, label);
-      if (id === currentUserId) {
-        const you = document.createElement("span");
-        you.className = "am-you";
-        you.textContent = "(you)";
-        item.append(you);
-      }
-      list.append(item);
-    });
-    el.append(title, list);
+    activeNames = new Set(entries.map(([, name]) => name));
+    refreshMessageDots();
   }
 
   function subscribeToPresence() {
@@ -251,7 +232,6 @@
   $("leave-btn").addEventListener("click", async () => {
     if (presenceChannel) await client.removeChannel(presenceChannel);
     if (channel) await client.removeChannel(channel);
-    const am = $("active-members"); if (am) am.innerHTML = "";
     presenceChannel = null; channel = null; currentRoom = null; currentUserId = null; presenceKey = null;
     chatCard.classList.add("hidden"); entryCard.classList.remove("hidden");
     $("messages").innerHTML = '<div class="empty-state">No messages yet. Say hello 👋</div>';
