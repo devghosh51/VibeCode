@@ -81,25 +81,14 @@
   }
 
   async function loadMessages() {
-    const { data, error } = await client
-      .from("chat_messages")
-      .select("id, room_id, username, content, created_at")
-      .eq("room_id", currentRoom)
-      .order("created_at", { ascending: false })
-      .limit(100);
-
+    const { data, error } = await client.from("chat_messages").select("id, room_id, username, content, created_at")
+      .eq("room_id", currentRoom).order("created_at", { ascending: true }).limit(100);
     if (error) throw error;
-
     $("messages").innerHTML = "";
-
-    if (!data.length) {
-      showEmpty();
-    } else {
-      data.reverse().forEach(renderMessage);
-    }
-
+    if (!data.length) showEmpty();
+    else data.forEach(renderMessage);
     scrollBottom();
-}
+  }
 
   function showEmpty() {
     $("messages").innerHTML = '<div class="empty-state">No messages yet. Say hello 👋</div>';
@@ -137,6 +126,70 @@
     scrollBottom();
   }
 
+  // ---- Active members panel (green dot beside each online member) ----
+  function ensureActivePanel() {
+    if (!document.getElementById("active-members-style")) {
+      const st = document.createElement("style");
+      st.id = "active-members-style";
+      st.textContent = `
+        #active-members { padding: 10px 14px; border-bottom: 1px solid rgba(128,128,128,.25); font-size: 14px; }
+        #active-members .am-title { font-weight: 600; margin-bottom: 6px; opacity: .85; }
+        #active-members .am-list { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+        #active-members .am-item { display: inline-flex; align-items: center; gap: 6px; }
+        #active-members .am-dot { width: 9px; height: 9px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.25); flex: none; }
+        #active-members .am-you { opacity: .6; font-size: 12px; }
+      `;
+      document.head.appendChild(st);
+    }
+    let el = $("active-members");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "active-members";
+      const msgs = $("messages");
+      msgs.parentNode.insertBefore(el, msgs);
+    }
+    return el;
+  }
+
+  function renderActiveMembers() {
+    if (!presenceChannel) return;
+    const el = ensureActivePanel();
+    const state = presenceChannel.presenceState();
+    const members = new Map(); // one entry per user, even with multiple tabs
+    Object.values(state).forEach((metas) => {
+      (metas || []).forEach((m) => {
+        const id = m.user_id || m.session_key;
+        if (!members.has(id)) members.set(id, m.username || "Someone");
+      });
+    });
+    const entries = [...members.entries()].sort((a, b) =>
+      (a[0] === currentUserId ? -1 : b[0] === currentUserId ? 1 : a[1].localeCompare(b[1])));
+
+    el.innerHTML = "";
+    const title = document.createElement("div");
+    title.className = "am-title";
+    title.textContent = `Active now · ${entries.length} member${entries.length === 1 ? "" : "s"}`;
+    const list = document.createElement("div");
+    list.className = "am-list";
+    entries.forEach(([id, name]) => {
+      const item = document.createElement("span");
+      item.className = "am-item";
+      const dot = document.createElement("span");
+      dot.className = "am-dot";
+      const label = document.createElement("span");
+      label.textContent = name;
+      item.append(dot, label);
+      if (id === currentUserId) {
+        const you = document.createElement("span");
+        you.className = "am-you";
+        you.textContent = "(you)";
+        item.append(you);
+      }
+      list.append(item);
+    });
+    el.append(title, list);
+  }
+
   function subscribeToPresence() {
     if (presenceChannel) client.removeChannel(presenceChannel);
     presenceKey = `${currentUserId}:${window.crypto?.randomUUID ? crypto.randomUUID() : Date.now() + Math.random()}`;
@@ -145,6 +198,7 @@
     });
 
     presenceChannel
+      .on("presence", { event: "sync" }, renderActiveMembers)
       .on("presence", { event: "join" }, ({ newPresences }) => {
         (newPresences || []).forEach((person) => {
           if (person.session_key === presenceKey) return;
@@ -197,6 +251,7 @@
   $("leave-btn").addEventListener("click", async () => {
     if (presenceChannel) await client.removeChannel(presenceChannel);
     if (channel) await client.removeChannel(channel);
+    const am = $("active-members"); if (am) am.innerHTML = "";
     presenceChannel = null; channel = null; currentRoom = null; currentUserId = null; presenceKey = null;
     chatCard.classList.add("hidden"); entryCard.classList.remove("hidden");
     $("messages").innerHTML = '<div class="empty-state">No messages yet. Say hello 👋</div>';
