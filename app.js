@@ -820,6 +820,13 @@
           removeTyperFor(m.user_id, m.username);
           if (fresh) handleIncoming(m);
         })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "chat_messages" }, (payload) => {
+        // a message was removed (e.g. by an admin) -> drop it from the screen
+        const id = payload.old && payload.old.id;
+        if (id == null) return;
+        const w = msgBox.querySelector(`[data-message-id="${id}"]`);
+        if (w) w.remove();
+      })
       .subscribe((state) => {
         if (channel !== ch) return; // stale channel
         if (state === "SUBSCRIBED") onConnected();
