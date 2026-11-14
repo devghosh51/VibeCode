@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0b1020">
+  <title>Admin — Chat</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root { --bg:#0b1020; --card:#131a2e; --card2:#192238; --line:#27324d; --text:#e8ecf6; --muted:#8e9bb8; --accent:#7c3aed; --danger:#ef4444; --ok:#22c55e; color-scheme: dark; }
+    @media (prefers-color-scheme: light) {
+      :root { --bg:#f1f5f9; --card:#ffffff; --card2:#f1f5f9; --line:#dbe2ee; --text:#0f172a; --muted:#64748b; color-scheme: light; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; }
+    .hidden { display: none !important; }
+    .muted { color: var(--muted); }
+    .error { color: var(--danger); }
+    h2 { margin: 18px 0 10px; font-size: 20px; } h3 { margin: 22px 0 8px; font-size: 15px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+
+    #login-card { max-width: 380px; margin: 12vh auto 0; padding: 26px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; }
+    #login-card h1 { margin: 0 0 4px; font-size: 22px; }
+    label { display: block; margin: 14px 0 6px; font-size: 13px; color: var(--muted); }
+    input, select { width: 100%; padding: 11px 13px; border-radius: 11px; border: 1px solid var(--line); background: var(--card2); color: var(--text); font-size: 15px; }
+    input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+
+    .btn { border: 1px solid var(--line); background: var(--card2); color: var(--text); padding: 10px 14px; border-radius: 11px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; width: 100%; margin-top: 16px; padding: 12px; }
+    .btn.danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+    .btn.sm { padding: 5px 10px; font-size: 12px; margin-left: auto; }
+    .btn:disabled { opacity: .6; cursor: wait; }
+
+    .top { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; background: var(--bg); border-bottom: 1px solid var(--line); }
+    .brand { font-weight: 700; font-size: 17px; }
+    .top-right { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); min-width: 0; }
+    #who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 36vw; }
+    #nav { display: flex; gap: 6px; padding: 10px 16px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+    #nav button { border: 0; background: transparent; color: var(--muted); padding: 9px 14px; border-radius: 999px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+    #nav button.active { background: var(--accent); color: #fff; font-weight: 600; }
+    #view { max-width: 900px; margin: 0 auto; padding: 4px 16px 60px; }
+
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    .stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+    .stat-n { font-size: 26px; font-weight: 700; } .stat-l { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .bars { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; height: 150px; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; }
+    .bar { width: 100%; max-width: 34px; background: linear-gradient(180deg, #8b5cf6, #6366f1); border-radius: 6px 6px 2px 2px; }
+    .bar-n { font-size: 11px; } .bar-l { font-size: 11px; color: var(--muted); }
+
+    .list { display: flex; flex-direction: column; gap: 8px; }
+    .row { text-align: left; display: block; width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 13px 14px; color: var(--text); cursor: pointer; font-size: 15px; }
+    .row:hover { border-color: var(--accent); }
+    .row .name { font-weight: 600; } .row .meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .toolbar input { flex: 1; min-width: 150px; } .toolbar select { width: auto; }
+    .tabs { display: flex; gap: 6px; margin: 12px 0; }
+    .tab { border: 1px solid var(--line); background: var(--card); color: var(--muted); padding: 8px 14px; border-radius: 999px; cursor: pointer; font-size: 14px; }
+    .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+    .msg { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+    .msg-top { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: 13px; }
+    .msg-body { margin-top: 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .room-link { background: none; border: 0; color: var(--accent); padding: 0; font-size: 13px; cursor: pointer; text-decoration: underline; }
+    .danger-zone { border-color: var(--danger); }
+    .danger-zone h3 { color: var(--danger); margin-top: 0; }
+    .field-row { display: flex; gap: 8px; } .field-row input { flex: 1; }
+    .field-row .btn { width: auto; margin: 0; }
+
+    #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #111827; color: #fff; padding: 10px 16px; border-radius: 999px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 99; max-width: 90vw; text-align: center; }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <section id="login-card" class="hidden">
+    <h1>✦ Admin</h1>
+    <p class="muted">Sign in with your admin account.</p>
+    <form id="login-form">
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="username" required>
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+      <button class="btn primary" type="submit" id="login-btn">Sign in</button>
+    </form>
+    <p class="error" id="login-status" role="status"></p>
+  </section>
+
+  <div id="app" class="hidden">
+    <header class="top">
+      <div class="brand">✦ Admin</div>
+      <div class="top-right"><span id="who"></span><button class="btn" id="signout" type="button">Sign out</button></div>
+    </header>
+    <nav id="nav">
+      <button data-view="dashboard" class="active">📊 Dashboard</button>
+      <button data-view="rooms">💬 Rooms</button>
+      <button data-view="search">🔍 Search</button>
+    </nav>
+    <main id="view"></main>
+  </div>
+  <div id="toast"></div>
+
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
