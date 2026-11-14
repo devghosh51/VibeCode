@@ -107,7 +107,7 @@
   // ---------------- Dashboard ----------------
   async function viewDashboard() {
     const [s, rs] = await Promise.all([rpc("admin_stats"), rpc("admin_list_rooms")]);
-    rooms = rs;
+    rooms = rs.map(r => ({ ...r, id: r.room_id }));
     const stat = (label, val) => h("div", { class: "stat" }, h("div", { class: "stat-n", text: Number(val).toLocaleString() }), h("div", { class: "stat-l", text: label }));
     const daily = s.daily || [];
     const max = Math.max(1, ...daily.map((d) => d.count));
@@ -132,7 +132,7 @@
 
   // ---------------- Rooms ----------------
   async function viewRooms() {
-    rooms = await rpc("admin_list_rooms");
+    rooms = (await rpc("admin_list_rooms"))   .map(r => ({ ...r, id: r.room_id }));
     const q = h("input", { type: "search", placeholder: "Search rooms…", oninput: draw });
     const sort = h("select", { onchange: draw },
       [["activity", "Recent activity"], ["new", "Newest"], ["msgs", "Most messages"], ["members", "Most members"]].map(([v, l]) => h("option", { value: v, text: l })));
@@ -316,7 +316,7 @@
 
     async function openRoom(id) {
       try {
-        rooms = await rpc("admin_list_rooms");
+        rooms = (await rpc("admin_list_rooms"))   .map(r => ({ ...r, id: r.room_id }));
         const r = rooms.find((x) => x.id === id);
         if (r) go("room", r); else toast("Room no longer exists");
       } catch (e) { toast(friendly(e)); }
